@@ -2,6 +2,7 @@
 using iText.Kernel.Pdf;
 using iText.Kernel.Utils;
 using System.Runtime.InteropServices;
+using System.IO;
 
 namespace PDFMergerAndConverter
 {
@@ -15,33 +16,59 @@ namespace PDFMergerAndConverter
 
         const int SW_HIDE = 0;
         const int SW_SHOW = 5;
+        static MyPdfMerger MypdfMerger;
+        static StreamReader PdfPathsReader;
 
-        static void Main(string[] args)
-        {
+        static int Main(string[] args)
+        {   
+            // Agr 1 = text file with file paths
+            // Agr 2 = Path for new PDF file
+
             var handle = GetConsoleWindow();
+            string fileLine;
 
             // Hide Console
             ShowWindow(handle, SW_HIDE);
-            ExtractPages(args[0], args[1], Int32.Parse(args[2]), Int32.Parse(args[3]));
-        }
-
-        private static void ExtractPages(string sourcePDFpath, string outputPDFpath, int startpage, int endpage)
-        {
-            var pdfSorce = new PdfDocument(new PdfReader(sourcePDFpath));
-            int nEndPage;
-            PdfDocument outPdf = new PdfDocument(new PdfWriter(outputPDFpath));
-            PdfMerger merger = new PdfMerger(outPdf);
-
-            nEndPage = endpage;
-            if (pdfSorce.GetNumberOfPages() < endpage)
+            if(args.Length != 2 || args[0] == string.Empty || args[0] == string.Empty)
             {
-                nEndPage = pdfSorce.GetNumberOfPages();
+                return -1;
+            }
+  
+            if (!File.Exists(args[0]))
+            {
+                return -2;
+            }
+               
+            MypdfMerger = new MyPdfMerger(args[1]);
+            PdfPathsReader = new StreamReader(args[0]);
+
+            while ((fileLine = PdfPathsReader.ReadLine()) != null)
+            {   
+                if (fileLine.Length < 5)
+                {
+
+                }
+                else if (fileLine.Substring(0, 5) == "[PDF]")
+                {
+                    MypdfMerger.addPdf(fileLine.Substring(5));
+                }
+                else if (fileLine.Substring(0, 5) == "[PNG]" || 
+                         fileLine.Substring(0, 5) == "[JPG]" || 
+                         fileLine.Substring(0, 5) == "[TIF]" ||
+                         fileLine.Substring(0, 5) == "[BMP]")
+                {
+                    MypdfMerger.AddImageToPdf(fileLine.Substring(5));
+                }
+                else if (fileLine.Substring(0, 5) == "[TXT]")
+                {
+                    MypdfMerger.AddTextToPdf(fileLine.Substring(5));
+                }
             }
 
-            merger.Merge(pdfSorce, startpage, nEndPage);
-            pdfSorce.Close();
-            outPdf.Close();
+            MypdfMerger.ClosePdf();
 
+            return 0;
         }
+
     }
 }

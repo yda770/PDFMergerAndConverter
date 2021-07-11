@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PDFMergerAndConverter": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Users\\yehuda_da\\Desktop\\pdf_marger.txt C:\\Users\\yehuda_da\\Desktop\\AllPdf.pdf"
+    }
+  }
+}
