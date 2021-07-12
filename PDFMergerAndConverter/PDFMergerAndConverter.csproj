@@ -7,6 +7,9 @@
 
   <ItemGroup>
     <PackageReference Include="itext7" Version="7.1.15" />
+    <PackageReference Include="MSOffice.Interop" Version="16.0.13328" />
+    <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
+    <PackageReference Include="Word2016.Interop" Version="1.0.0" />
   </ItemGroup>
 
 </Project>

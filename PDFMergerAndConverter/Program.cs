@@ -15,6 +15,13 @@ namespace PDFMergerAndConverter
         static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
         const int SW_HIDE = 0;
+        const string PDF_T = "[PDF]";
+        const string PNG_T = "[PNG]";
+        const string JPG_T = "[JPG]";
+        const string TIF_T = "[TIF]";
+        const string BMP_T = "[BMP]";
+        const string TXT_T = "[TXT]";
+        const string DOC_T = "[DOC]";
         const int SW_SHOW = 5;
         static MyPdfMerger MypdfMerger;
         static StreamReader PdfPathsReader;
@@ -46,22 +53,26 @@ namespace PDFMergerAndConverter
             {   
                 if (fileLine.Length < 5)
                 {
-
+                    // TODO
                 }
-                else if (fileLine.Substring(0, 5) == "[PDF]")
+                else if (fileLine.Substring(0, 5) == PDF_T)
                 {
                     MypdfMerger.addPdf(fileLine.Substring(5));
                 }
-                else if (fileLine.Substring(0, 5) == "[PNG]" || 
-                         fileLine.Substring(0, 5) == "[JPG]" || 
-                         fileLine.Substring(0, 5) == "[TIF]" ||
-                         fileLine.Substring(0, 5) == "[BMP]")
+                else if (fileLine.Substring(0, 5) == PNG_T || 
+                         fileLine.Substring(0, 5) == JPG_T || 
+                         fileLine.Substring(0, 5) == TIF_T ||
+                         fileLine.Substring(0, 5) == BMP_T)
                 {
                     MypdfMerger.AddImageToPdf(fileLine.Substring(5));
                 }
-                else if (fileLine.Substring(0, 5) == "[TXT]")
+                else if (fileLine.Substring(0, 5) == TXT_T)
                 {
                     MypdfMerger.AddTextToPdf(fileLine.Substring(5));
+                }
+                else if (fileLine.Substring(0, 5) == DOC_T)
+                {
+                    MypdfMerger.AddWordToPdf(fileLine.Substring(5));
                 }
             }
 
