@@ -12,6 +12,7 @@ using iText.Layout.Element;
 using iText.Layout.Font;
 using iText.Layout.Properties;
 using System;
+using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
@@ -63,14 +64,15 @@ namespace PDFMergerAndConverter
             float fontSizeF = 20;
             float allowedWidth = 185;
 
-            PdfPage page = pdfDoc.GetPage(pageNumber);
-            PdfCanvas pdfCanvas = new PdfCanvas(page);
-            iText.Kernel.Geom.Rectangle rectangle = new iText.Kernel.Geom.Rectangle(allowedWidth, fontSizeF * 3);
-
             try
             {
-                Canvas canvas2 = new Canvas(pdfCanvas, pdfDoc, rectangle);
-                PdfFont font = PdfFontFactory.CreateFont(@"C:\Users\yehuda_da\source\repos\PDFMergerAndConverter\PDFMergerAndConverter\bin\Debug\netcoreapp3.1\Arial.ttf", PdfEncodings.IDENTITY_H);
+                string rootFolder = System.IO.Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+                PdfPage page = pdfDoc.GetPage(pageNumber);
+                
+                PdfCanvas pdfCanvas = new PdfCanvas(this.outPdf, pageNumber);
+                Rectangle rectangle = new Rectangle(allowedWidth, fontSizeF * 3);
+                Canvas canvas = new Canvas(pdfCanvas, rectangle);
+                PdfFont font = PdfFontFactory.CreateFont(rootFolder + @"\Arial.ttf", PdfEncodings.IDENTITY_H);
                 Text title =
                   new Text(pageTitle).SetFont(font);
 
@@ -78,20 +80,24 @@ namespace PDFMergerAndConverter
                 paragraph.SetBackgroundColor(ColorConstants.GRAY, 0.7f);
                 paragraph.SetFontColor(ColorConstants.WHITE);
                 paragraph.SetWidth(page.GetPageSize().GetWidth() - 30);
-                paragraph.SetFontSize(fontSizeF - 5);
-                paragraph.SetBorder(new SolidBorder(1));
+                paragraph.SetFontSize(fontSizeF - 7);
+                //paragraph.SetBorder(new SolidBorder(1));
                 paragraph.SetMargin(3);
                 paragraph.SetMultipliedLeading(1);
 
                 float xCoord = page.GetPageSize().GetWidth() / 2;
                 float yCoord = page.GetPageSize().GetHeight() - 35;
 
-                canvas2.ShowTextAligned(paragraph, xCoord, yCoord, TextAlignment.CENTER);
-                canvas2.Close();
+                canvas.ShowTextAligned(paragraph, xCoord, yCoord, TextAlignment.CENTER);
+                canvas.Close();
 
             }
             catch (System.Exception ex)
-            { }
+            {
+                Console.WriteLine(ex.Message);
+
+
+            }
         }
         public void ClosePdf()
         {
@@ -114,6 +120,7 @@ namespace PDFMergerAndConverter
             int pagesNum = this.outPdf.GetNumberOfPages();
             int currentPageBreaks = this.pageBreaks;
 
+            this.outPdf.AddNewPage();
             for (int pageNum = 0; pageNum < pagesNum - currentPageBreaks; pageNum++)
             {
                 document.Add(new AreaBreak(AreaBreakType.NEXT_PAGE));
@@ -156,7 +163,8 @@ namespace PDFMergerAndConverter
                     this.pageBreaks--;
                 }
 
-                PdfFont font = PdfFontFactory.CreateFont(@"C:\Users\yehuda_da\source\repos\PDFMergerAndConverter\PDFMergerAndConverter\bin\Debug\netcoreapp3.1\Arial.ttf", PdfEncodings.IDENTITY_H);
+                string rootFolder = System.IO.Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+                PdfFont font = PdfFontFactory.CreateFont(rootFolder + @"\Arial.ttf", PdfEncodings.IDENTITY_H);
                 document.Add(new Paragraph(text).SetFont(font));
 
                 this.AddPageTitle(this.outPdf,
@@ -166,15 +174,11 @@ namespace PDFMergerAndConverter
         }
         public void AddWordToPdf(string docPath)
         {
-
             var app = new Microsoft.Office.Interop.Word.Application();
-
-            //MessageFilter.Register();
-
             app.Visible = true;
-
+            int pagesNum = this.outPdf.GetNumberOfPages();
             var doc = app.Documents.Open(docPath.Trim());
-            Document document = new Document(this.outPdf);
+            Document document = new Document(this.outPdf, this.outPdf.GetDefaultPageSize(), false);
             doc.ShowGrammaticalErrors = false;
             doc.ShowRevisions = false;
             doc.ShowSpellingErrors = false;
@@ -188,12 +192,10 @@ namespace PDFMergerAndConverter
                     {
                         var page = pane.Pages[i];
                         var bits = page.EnhMetaFileBits;
-                        //var target = Path.Combine(startupPath + "\\" + filename1.Split('.')[0], string.Format("{1}_page_{0}", i, filename1.Split('.')[0]));
-
+                        
                         try
                         {
                             var ms = new MemoryStream((byte[])(bits));
-
                             var image = System.Drawing.Image.FromStream(ms);
                             string tempPath = System.IO.Path.GetTempPath();
                             tempPath += @"/image_" + GetTimestamp(new DateTime());
@@ -206,7 +208,7 @@ namespace PDFMergerAndConverter
                             image2.SetWidth(this.outPdf.GetDefaultPageSize().GetWidth() - 50);
                             image2.SetAutoScaleHeight(true);
 
-                            int pagesNum = this.outPdf.GetNumberOfPages();
+                            
                             int currentPageBreaks = this.pageBreaks;
 
                             for (int pageNum = 0; pageNum < pagesNum - currentPageBreaks; pageNum++)
@@ -215,26 +217,29 @@ namespace PDFMergerAndConverter
                                 this.pageBreaks++;
                             }
 
-                            if (pageBreaks > 0)
-                            {
-                                this.pageBreaks--;
-                            }
+                            //if (pageBreaks > 0)
+                            //{
+                            //    this.pageBreaks--;
+                            //}
 
                             document.Add(image2);
 
                             File.Delete(pngTarget);
-                            this.AddPageTitle(this.outPdf,
-                                pagesNum + 1,
-                                TitleA + " " + docPath.Trim() + " (1 " + TitleB + ")");
                         }
                         catch (System.Exception ex)
-                        { }
+                        {
+                            Console.WriteLine(ex.Message);
+                        }
                     }
                 }
             }
+            document.Flush();
             doc.Close(Type.Missing, Type.Missing, Type.Missing);
             app.Quit(Type.Missing, Type.Missing, Type.Missing);
-            //MessageFilter.Revoke();
+
+            this.AddPageTitle(this.outPdf,
+            pagesNum + 1,
+            TitleA + " " + docPath.Trim() + " (1 " + TitleB + ")");
         }
 
         public static String GetTimestamp(DateTime value)
