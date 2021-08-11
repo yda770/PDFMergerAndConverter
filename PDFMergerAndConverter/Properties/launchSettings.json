@@ -2,7 +2,7 @@
   "profiles": {
     "PDFMergerAndConverter": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Users\\yehuda_da\\Desktop\\PDFMargerTest\\pdf_marger.txt C:\\Users\\yehuda_da\\Desktop\\PDFMargerTest\\AllPdf.pdf"
+      "commandLineArgs": "C:\\Users\\yehuda_da\\Desktop\\PDFMargerTest\\pdf_marger.txt C:\\Users\\yehuda_da\\Desktop\\PDFMargerTest\\AllPdf.pdf hide_title=True"
     }
   }
 }

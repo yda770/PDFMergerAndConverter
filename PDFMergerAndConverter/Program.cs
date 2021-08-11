@@ -25,6 +25,7 @@ namespace PDFMergerAndConverter
         const int SW_SHOW = 5;
         static MyPdfMerger MypdfMerger;
         static StreamReader PdfPathsReader;
+        static bool HideShowTitle = true;
 
         static int Main(string[] args)
         {   
@@ -36,43 +37,48 @@ namespace PDFMergerAndConverter
 
             // Hide Console
             ShowWindow(handle, SW_HIDE);
-            if(args.Length != 2 || args[0] == string.Empty || args[0] == string.Empty)
+            if(args.Length < 2 || args[0] == string.Empty || args[1] == string.Empty)
             {
                 return -1;
             }
   
-            if (!File.Exists(args[0]))
+            if (!File.Exists(args[0].Trim()))
             {
                 return -2;
             }
-               
-            MypdfMerger = new MyPdfMerger(args[1]);
+
+            if ( args.Length >= 3)
+            {   
+                HideShowTitle = bool.Parse(args[2].Split("=")[1]);
+            }
+
+            MypdfMerger = new MyPdfMerger(args[1], HideShowTitle);
             PdfPathsReader = new StreamReader(args[0]);
 
             while ((fileLine = PdfPathsReader.ReadLine()) != null)
-            {   
-                if (fileLine.Length < 5)
+            {
+                if (fileLine.Length >= 5)
                 {
-                    // TODO
-                }
-                else if (fileLine.Substring(0, 5) == PDF_T)
-                {
-                    MypdfMerger.addPdf(fileLine.Substring(5));
-                }
-                else if (fileLine.Substring(0, 5) == PNG_T || 
-                         fileLine.Substring(0, 5) == JPG_T || 
-                         fileLine.Substring(0, 5) == TIF_T ||
-                         fileLine.Substring(0, 5) == BMP_T)
-                {
-                    MypdfMerger.AddImageToPdf(fileLine.Substring(5));
-                }
-                else if (fileLine.Substring(0, 5) == TXT_T)
-                {
-                    MypdfMerger.AddTextToPdf(fileLine.Substring(5));
-                }
-                else if (fileLine.Substring(0, 5) == DOC_T)
-                {
-                    MypdfMerger.AddWordToPdf(fileLine.Substring(5));
+                    switch (fileLine.Substring(0, 5))
+                    {
+                        case (PDF_T):
+                            MypdfMerger.addPdf(fileLine.Substring(5).Split(",")[0], fileLine.Substring(5).Split(",")[1]);
+                            break;
+                        case (PNG_T): // Acting like OR
+                        case (JPG_T):
+                        case (TIF_T):
+                        case (BMP_T):
+                            MypdfMerger.AddImageToPdf(fileLine.Substring(5).Split(",")[0], fileLine.Substring(5).Split(",")[1], true);
+                            break;
+                        case (TXT_T):
+                            MypdfMerger.AddTextToPdf(fileLine.Substring(5).Split(",")[0], fileLine.Substring(5).Split(",")[1]);
+                            break;
+                        case (DOC_T):
+                            MypdfMerger.AddWordToPdf(fileLine.Substring(5).Split(",")[0], fileLine.Substring(5).Split(",")[1]);
+                            break;
+                        //default:
+
+                    }
                 }
             }
 
