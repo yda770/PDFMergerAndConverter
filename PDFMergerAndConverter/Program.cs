@@ -9,7 +9,7 @@ namespace PDFMergerAndConverter
     class Program
     {
         [DllImport("kernel32.dll")]
-        static extern IntPtr GetConsoleWindow(); 
+        static extern IntPtr GetConsoleWindow();
 
         [DllImport("user32.dll")]
         static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
@@ -28,7 +28,7 @@ namespace PDFMergerAndConverter
         static bool HideShowTitle = true;
 
         static int Main(string[] args)
-        {   
+        {
             // Agr 1 = text file with file paths
             // Agr 2 = Path for new PDF file
 
@@ -36,8 +36,8 @@ namespace PDFMergerAndConverter
             string fileLine;
 
             // Hide Console
-            ShowWindow(handle, SW_HIDE);
-            if(args.Length < 2 || args[0] == string.Empty || args[1] == string.Empty)
+            ShowWindow(handle, 1);
+            if (args.Length < 2 || args[0] == string.Empty || args[1] == string.Empty)
             {
                 return -1;
             }
@@ -68,7 +68,7 @@ namespace PDFMergerAndConverter
                         case (JPG_T):
                         case (TIF_T):
                         case (BMP_T):
-                            MypdfMerger.AddImageToPdf(fileLine.Substring(5).Split(",")[0], fileLine.Substring(5).Split(",")[1], true);
+                            MypdfMerger.AddImageToPdf(fileLine.Substring(5).Split(",")[0], fileLine.Substring(5).Split(",")[1], true, 1);
                             break;
                         case (TXT_T):
                             MypdfMerger.AddTextToPdf(fileLine.Substring(5).Split(",")[0], fileLine.Substring(5).Split(",")[1]);
@@ -83,7 +83,6 @@ namespace PDFMergerAndConverter
             }
 
             MypdfMerger.ClosePdf();
-
             return 0;
         }
 

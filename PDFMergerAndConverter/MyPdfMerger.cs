@@ -42,22 +42,14 @@ namespace PDFMergerAndConverter
             if (File.Exists(source.Trim()))
             {
                 var pdfSorce = new PdfDocument(new PdfReader(source.Trim()));
+              
                 merger.Merge(pdfSorce, 1, pdfSorce.GetNumberOfPages());
-
-                Encoding defaultEncoding = Encoding.Default;
-                byte[] bytes = defaultEncoding.GetBytes(TitleA);
-                Encoding encoding2 = Encoding.UTF8;
-                string TitleA_CNV = encoding2.GetString(bytes);
-
-                defaultEncoding = Encoding.Default;
-                bytes = defaultEncoding.GetBytes(TitleB);
-                encoding2 = Encoding.UTF8;
-                string TitleB_CNV = encoding2.GetString(bytes);
 
                 this.AddPageTitle(this.outPdf,
                                   this.outPdf.GetNumberOfPages() - pdfSorce.GetNumberOfPages() + 1,
                                   title,
                                   pdfSorce.GetNumberOfPages());
+
                 pdfSorce.Close();
             }
             return "";
@@ -122,81 +114,72 @@ namespace PDFMergerAndConverter
             return false;
         }
 
-        public void AddImageToPdf(string imageSource, string title, bool firstPage)
+        public void AddImageToPdf(string imageSource, string title, bool firstPage, int pages)
         {
-            Document document = new Document(this.outPdf);
+            string tempPath = System.IO.Path.GetTempPath();
+            tempPath += @"/pdf_" + GetTimestamp(new DateTime());
+            PdfDocument newPage = new PdfDocument((new PdfWriter(tempPath)));
+            Document document = new Document(newPage);
             ImageData imageData = ImageDataFactory.Create(imageSource.Trim());
             Image image = new Image(imageData);
             image.SetWidth(this.outPdf.GetDefaultPageSize().GetWidth() - 50);
             image.SetAutoScaleHeight(true);
-
             int pagesNum = this.outPdf.GetNumberOfPages();
-            int currentPageBreaks = this.pageBreaks;
-
-            this.outPdf.AddNewPage();
-            for (int pageNum = 0; pageNum < pagesNum - currentPageBreaks; pageNum++)
-            {
-                document.Add(new AreaBreak(AreaBreakType.NEXT_PAGE));
-                this.pageBreaks++;
-            }
-
-            if (pageBreaks > 0)
-            {
-                this.pageBreaks--;
-            }
-
             document.Add(image);
+            document.Close();
+            this.addPdf(tempPath, title);
+            File.Delete(tempPath);
+
             if (firstPage)
             {
-                this.AddPageTitle(this.outPdf, pagesNum + 1, title, 1);
+                this.AddPageTitle(this.outPdf, pagesNum + 1, title, pages);
             }
+
+            //    Document document = new Document(this.outPdf);
+            //    ImageData imageData = ImageDataFactory.Create(imageSource.Trim());
+            //    Image image = new Image(imageData);
+            //    image.SetWidth(this.outPdf.GetDefaultPageSize().GetWidth() - 50);
+            //    image.SetAutoScaleHeight(true);
+
+            //    int pagesNum = this.outPdf.GetNumberOfPages();
+            //    int currentPageBreaks = this.pageBreaks;
+
+            //    this.outPdf.AddNewPage();
+            //    for (int pageNum = 0; pageNum < pagesNum - currentPageBreaks; pageNum++)
+            //    {
+            //        document.Add(new AreaBreak(AreaBreakType.NEXT_PAGE));
+            //        this.pageBreaks++;
+            //    }
+
+            //    if (pageBreaks > 0)
+            //    {
+            //        this.pageBreaks--;
+            //    }
+
+            //    document.Add(image);
+            //    if (firstPage)
+            //    {
+            //        this.AddPageTitle(this.outPdf, pagesNum + 1, title, pages);
+            //    }
+
         }
         public void AddTextToPdf(string textSource, string title)
         {
-            Document document = new Document(this.outPdf);
-
-            int NewPages = 0;
             if (File.Exists(textSource.Trim()))
             {
                 string text = File.ReadAllText(textSource.Trim());
-                string correctedText = "";
 
-                using (StringReader reader = new StringReader(text))
-                {
-                    string line = string.Empty;
-                    do
-                    {
-                        line = reader.ReadLine();
-                        if (line != null)
-                        {
-                            line = ReverseOnlyHebrew(line);
-                            correctedText += line + Environment.NewLine;
-                        }
+                System.Drawing.Bitmap image = ConvertTextToImage(text, "Arial", 10, System.Drawing.Color.White, 
+                                                                 System.Drawing.Color.Black, 
+                                                                 (int)this.outPdf.GetDefaultPageSize().GetWidth() - 50,
+                                                                 (int)this.outPdf.GetDefaultPageSize().GetHeight() - 50);
 
-                    } while (line != null);
-                }
-             
+                string tempPath = System.IO.Path.GetTempPath();
+                tempPath += @"/image_" + GetTimestamp(new DateTime());
+                var pngTarget = System.IO.Path.ChangeExtension(tempPath, "bmp");
+                image.Save(pngTarget, ImageFormat.Bmp);
 
-                int pagesNum = this.outPdf.GetNumberOfPages();
-                int currentPageBreaks = this.pageBreaks;
-
-                for (int pageNum = 0; pageNum < pagesNum - currentPageBreaks; pageNum++)
-                {
-                    document.Add(new AreaBreak(AreaBreakType.NEXT_PAGE));
-                    this.pageBreaks++;
-                    NewPages++;
-                }
-
-                if (pageBreaks > 0)
-                {
-                    this.pageBreaks--;
-                }
-
-                string rootFolder = System.IO.Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-                PdfFont font = PdfFontFactory.CreateFont(rootFolder + @"\Arial.ttf", PdfEncodings.IDENTITY_H);
-                document.Add(new Paragraph(correctedText).SetFont(font));
-
-                this.AddPageTitle(this.outPdf, pagesNum + 1, title, 1);
+                this.AddImageToPdf(pngTarget.Trim(), title, true, 1);
             }
         }
         public void AddWordToPdf(string docPath, string title)
@@ -231,7 +214,7 @@ namespace PDFMergerAndConverter
                             image.Save(pngTarget, ImageFormat.Png);
 
 
-                            this.AddImageToPdf(pngTarget.Trim(), title, firstPage);
+                            this.AddImageToPdf(pngTarget.Trim(), title, firstPage, pane.Pages.Count);
                             firstPage = false;
 
                             File.Delete(pngTarget);
@@ -244,14 +227,8 @@ namespace PDFMergerAndConverter
                 }
             }
 
-            //this.pageBreaks--;
-            //document.Flush();
             doc.Close(Type.Missing, Type.Missing, Type.Missing);
             app.Quit(Type.Missing, Type.Missing, Type.Missing);
-
-            //this.AddPageTitle(this.outPdf,
-            //pagesNum + 1,
-            //TitleA + " " + title.Trim() + " (1 " + TitleB + ")");
         }
 
         public static String GetTimestamp(DateTime value)
@@ -307,5 +284,21 @@ namespace PDFMergerAndConverter
             Array.Reverse(strArray);
             return new string(strArray);
         }
+
+        public System.Drawing.Bitmap ConvertTextToImage(string txt, string fontname, int fontsize, System.Drawing.Color bgcolor, System.Drawing.Color fcolor, int width, int Height)
+    {
+        System.Drawing.Bitmap bmp = new System.Drawing.Bitmap(width, Height);
+        using (System.Drawing.Graphics graphics = System.Drawing.Graphics.FromImage(bmp))
+        {
+
+            System.Drawing.Font font = new System.Drawing.Font(fontname, fontsize);
+            graphics.FillRectangle(new System.Drawing.SolidBrush(bgcolor), 0, 0, bmp.Width, bmp.Height);
+            graphics.DrawString(txt, font, new System.Drawing.SolidBrush(fcolor), 0, 0);
+            graphics.Flush();
+            font.Dispose();
+            graphics.Dispose();
+        }
+        return bmp;
+    }
     }
 }
