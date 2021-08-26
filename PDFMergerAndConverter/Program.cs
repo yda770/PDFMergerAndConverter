@@ -22,6 +22,7 @@ namespace PDFMergerAndConverter
         const string BMP_T = "[BMP]";
         const string TXT_T = "[TXT]";
         const string DOC_T = "[DOC]";
+        const string NUL_T = "[NUL]";
         const int SW_SHOW = 5;
         static MyPdfMerger MypdfMerger;
         static StreamReader PdfPathsReader;
@@ -76,8 +77,13 @@ namespace PDFMergerAndConverter
                         case (DOC_T):
                             MypdfMerger.AddWordToPdf(fileLine.Substring(5).Split(",")[0], fileLine.Substring(5).Split(",")[1]);
                             break;
-                        //default:
+                        case (NUL_T):
+                            string rootFolder = System.IO.Path.GetDirectoryName(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName);
 
+                            MypdfMerger.addPdf(rootFolder + @"\no_preview.pdf", fileLine.Substring(5).Split(", ")[1]);
+
+                            break;
+                       
                     }
                 }
             }
